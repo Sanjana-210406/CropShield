@@ -1,0 +1,9 @@
+CropShield Glide App
+
+Platform: Glide
+
+Features:
+- Crop advisory
+- Weather-based spraying decisions
+- Multilingual support
+- Voice assistant integration using Web View

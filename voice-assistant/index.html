@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CropShield – Voice Assistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 40px;
+    }
+    select, button {
+      font-size: 18px;
+      padding: 10px 20px;
+      margin-top: 15px;
+    }
+    #text, #result {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🌾 CropShield</h1>
+<p>Multilingual Voice Farming Assistant</p>
+
+<select id="languageSelect">
+  <option value="en">English</option>
+  <option value="hi">Hindi</option>
+  <option value="te">Telugu</option>
+</select>
+<br>
+
+<button onclick="startListening()">🎤 Speak</button>
+
+<div id="text"></div>
+<div id="result"></div>
+
+<script>
+const SpeechRecognition =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+
+const recognition = new SpeechRecognition();
+recognition.lang = "en-IN";
+
+function startListening() {
+  recognition.start();
+}
+
+recognition.onresult = function (event) {
+  const input = event.results[0][0].transcript.toLowerCase();
+  document.getElementById("text").innerText = "You said: " + input;
+  processLogic(input);
+};
+
+function processLogic(input) {
+  const lang = document.getElementById("languageSelect").value;
+  let reply = "";
+
+  if (lang === "hi") {
+    if (input.includes("baarish") || input.includes("barish")) {
+      reply = "बारिश की संभावना है। आज स्प्रे न करें।";
+    } else if (input.includes("keede") || input.includes("keet")) {
+      reply = "फसल में कीट समस्या है। नीम तेल का प्रयोग करें।";
+    } else {
+      reply = "कृपया मौसम या फसल के बारे में पूछें।";
+    }
+    speak(reply, "hi-IN");
+  }
+
+  if (lang === "en") {
+    if (input.includes("rain")) {
+      reply = "Rain is expected. Avoid spraying today.";
+    } else if (input.includes("pest")) {
+      reply = "Common pests detected. Use neem oil.";
+    } else {
+      reply = "Please ask about crops or weather.";
+    }
+    speak(reply, "en-IN");
+  }
+
+  if (lang === "te") {
+    if (input.includes("varsham")) {
+      reply = "వర్షం వచ్చే అవకాశం ఉంది. స్ప్రే చేయవద్దు.";
+    } else if (input.includes("purugu")) {
+      reply = "పురుగు సమస్య ఉంది. నిమ్ ఆయిల్ వాడండి.";
+    } else {
+      reply = "దయచేసి పంటల గురించి అడగండి.";
+    }
+    speak(reply, "te-IN");
+  }
+
+  document.getElementById("result").innerText = reply;
+}
+
+function speak(text, lang) {
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = lang;
+  window.speechSynthesis.speak(msg);
+}
+</script>
+
+</body>
+</html>
