@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CropShield – Multilingual Voice Assistant</title>
+<title>CropShield – Smart Farming Voice Assistant</title>
 
 <style>
   body {
@@ -10,9 +10,7 @@
     text-align: center;
     margin-top: 40px;
   }
-  h1 {
-    font-size: 34px;
-  }
+  h1 { font-size: 34px; }
   select, button {
     font-size: 18px;
     padding: 10px 20px;
@@ -28,7 +26,7 @@
 <body>
 
 <h1>🌾 CropShield</h1>
-<p>Multilingual Voice Farming Assistant</p>
+<p>Smart Multilingual Farming Assistant</p>
 
 <select id="lang">
   <option value="en-IN">English</option>
@@ -43,7 +41,7 @@
 <div id="answer"></div>
 
 <script>
-/* ================= SPEECH RECOGNITION ================= */
+/* ================= SPEECH SETUP ================= */
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -52,88 +50,119 @@ recognition.continuous = false;
 recognition.interimResults = false;
 
 function startListening() {
-  const selectedLang = document.getElementById("lang").value;
-  recognition.lang = selectedLang;
+  recognition.lang = document.getElementById("lang").value;
   recognition.start();
 }
 
 recognition.onresult = function (event) {
-  const text = event.results[0][0].transcript.toLowerCase();
-  document.getElementById("heard").innerText = "You said: " + text;
-  handleQuery(text);
+  const input = event.results[0][0].transcript.toLowerCase();
+  document.getElementById("heard").innerText = "You said: " + input;
+  respond(input);
 };
 
-recognition.onerror = function () {
-  document.getElementById("answer").innerText =
-    "Could not detect speech. Please try again.";
+/* ================= KNOWLEDGE BASE ================= */
+const crops = {
+  rice: "Rice grows well in kharif season with adequate rainfall.",
+  wheat: "Wheat is a rabi crop and needs cool climate.",
+  cotton: "Cotton requires warm climate and careful pest management.",
+  maize: "Maize can be grown in both kharif and rabi seasons."
 };
 
-/* ================= MAIN LOGIC ================= */
-function handleQuery(input) {
+const fertilizers = {
+  rice: "Rice requires urea and DAP in split doses.",
+  wheat: "Wheat needs nitrogen-rich fertiliser like urea.",
+  cotton: "Cotton benefits from NPK and potash.",
+  maize: "Maize needs balanced NPK fertiliser."
+};
+
+const pests = {
+  rice: "Common rice pests include stem borer and leaf folder.",
+  wheat: "Aphids and termites affect wheat crops.",
+  cotton: "Cotton bollworm is a major pest.",
+  maize: "Fall armyworm affects maize."
+};
+
+const states = {
+  maharashtra: "Maharashtra supports cotton, soybean and maize.",
+  telangana: "Telangana mainly grows rice, cotton and maize.",
+  andhra: "Andhra Pradesh grows rice, chilli and pulses.",
+  punjab: "Punjab is known for wheat and rice."
+};
+
+/* ================= LOGIC ENGINE ================= */
+function respond(input) {
   const lang = document.getElementById("lang").value;
   let reply = "";
 
+  function findKey(obj) {
+    return Object.keys(obj).find(k => input.includes(k));
+  }
+
+  const crop = findKey(crops);
+  const state = findKey(states);
+  const isRain = input.includes("rain") || input.includes("barish") || input.includes("varsham");
+  const isSpray = input.includes("spray") || input.includes("chhidkaav");
+  const isPest = input.includes("pest") || input.includes("keet") || input.includes("purugu");
+  const isFert = input.includes("fertilizer") || input.includes("khaad") || input.includes("eruvu");
+
   /* ---------- ENGLISH ---------- */
   if (lang === "en-IN") {
-    if (input.includes("rain")) {
-      reply = "Rain is expected. Avoid spraying today.";
-    } else if (input.includes("spray")) {
-      reply = "Weather is suitable. You can spray today.";
-    } else if (input.includes("kharif")) {
-      reply = "Kharif crops include rice, cotton, maize and groundnut.";
-    } else if (input.includes("rabi")) {
-      reply = "Rabi crops include wheat, mustard and gram.";
-    } else if (input.includes("fertilizer") || input.includes("urea") || input.includes("dap")) {
-      reply = "Use balanced fertilisers like urea, DAP and NPK.";
-    } else if (input.includes("pest") || input.includes("disease")) {
-      reply = "Common pests include stem borer, aphids and bollworm.";
-    } else if (input.includes("season")) {
-      reply = "India mainly has Kharif, Rabi and Zaid seasons.";
-    } else {
-      reply = "You can ask about crops, fertiliser, pests, rain or spraying.";
-    }
+    if (state && crop)
+      reply = states[state] + " " + crops[crop];
+    else if (isRain)
+      reply = "Rain affects spraying and irrigation. Avoid spraying during rainfall.";
+    else if (isSpray)
+      reply = "Spraying should be done in dry and calm weather.";
+    else if (isPest && crop)
+      reply = pests[crop];
+    else if (isFert && crop)
+      reply = fertilizers[crop];
+    else if (crop)
+      reply = crops[crop];
+    else if (state)
+      reply = states[state];
+    else
+      reply = "Follow proper crop selection, fertilisation and pest management for better yield.";
   }
 
-  /* ---------- HINDI (ROMAN INPUT) ---------- */
+  /* ---------- HINDI ---------- */
   if (lang === "hi-IN") {
-    if (input.includes("baarish") || input.includes("barish")) {
-      reply = "बारिश की संभावना है। आज स्प्रे न करें।";
-    } else if (input.includes("spray") || input.includes("chhidkaav")) {
-      reply = "मौसम अनुकूल है। आप स्प्रे कर सकते हैं।";
-    } else if (input.includes("kharif")) {
-      reply = "खरीफ फसलें धान, कपास और मक्का हैं।";
-    } else if (input.includes("rabi")) {
-      reply = "रबी फसलें गेहूं, चना और सरसों हैं।";
-    } else if (input.includes("khaad") || input.includes("urea") || input.includes("dap")) {
-      reply = "यूरिया और डीएपी का संतुलित प्रयोग करें।";
-    } else if (input.includes("keet") || input.includes("rog")) {
-      reply = "तना छेदक और माहू सामान्य कीट हैं।";
-    } else if (input.includes("mausam") || input.includes("season")) {
-      reply = "भारत में खरीफ, रबी और ज़ायद मौसम होते हैं।";
-    } else {
-      reply = "कृपया फसल, खाद, कीट या मौसम के बारे में पूछें।";
-    }
+    if (state && crop)
+      reply = states[state] + " में " + crops[crop];
+    else if (isRain)
+      reply = "बारिश के समय स्प्रे न करें।";
+    else if (isSpray)
+      reply = "स्प्रे साफ और सूखे मौसम में करें।";
+    else if (isPest && crop)
+      reply = pests[crop];
+    else if (isFert && crop)
+      reply = fertilizers[crop];
+    else if (crop)
+      reply = crops[crop];
+    else if (state)
+      reply = states[state];
+    else
+      reply = "अच्छी पैदावार के लिए फसल प्रबंधन जरूरी है।";
   }
 
-  /* ---------- TELUGU (ROMAN INPUT) ---------- */
+  /* ---------- TELUGU ---------- */
   if (lang === "te-IN") {
-    if (input.includes("varsham")) {
-      reply = "వర్షం వచ్చే అవకాశం ఉంది. స్ప్రే చేయవద్దు.";
-    } else if (input.includes("spray")) {
-      reply = "వాతావరణం అనుకూలంగా ఉంది. స్ప్రే చేయవచ్చు.";
-    } else if (input.includes("kharif")) {
-      reply = "ఖరీఫ్ పంటలు వరి, పత్తి మరియు మొక్కజొన్న.";
-    } else if (input.includes("rabi")) {
-      reply = "రబీ పంటలు గోధుమ మరియు శెనగలు.";
-    } else if (input.includes("eruvu") || input.includes("urea")) {
-      reply = "యూరియా లేదా ఎన్‌పీకే ఎరువులు వాడాలి.";
-    } else if (input.includes("purugu") || input.includes("tegulu")) {
-      reply = "స్టెం బోరర్ మరియు ఆఫిడ్స్ సాధారణ పురుగులు.";
-    } else if (input.includes("season")) {
-      reply = "ఖరీఫ్, రబీ మరియు జాయిద్ పంట కాలాలు ఉన్నాయి.";
-    } else {
-      reply = "పంటలు లేదా వాతావరణం గురించి అడగండి.";
-    }
+    if (state && crop)
+      reply = states[state] + " లో " + crops[crop];
+    else if (isRain)
+      reply = "వర్షం సమయంలో స్ప్రే చేయవద్దు.";
+    else if (isSpray)
+      reply = "ఎండగా ఉన్నప్పుడు స్ప్రే చేయాలి.";
+    else if (isPest && crop)
+      reply = pests[crop];
+    else if (isFert && crop)
+      reply = fertilizers[crop];
+    else if (crop)
+      reply = crops[crop];
+    else if (state)
+      reply = states[state];
+    else
+      reply = "మంచి దిగుబడికి సరైన వ్యవసాయ పద్ధతులు పాటించాలి.";
   }
 
   document.getElementById("answer").innerText = reply;
@@ -150,5 +179,8 @@ function speak(text, lang) {
 
 </body>
 </html>
+
+
+
 
 
