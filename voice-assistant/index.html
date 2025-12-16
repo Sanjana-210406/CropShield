@@ -3,11 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>CropShield – Voice Assistant</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       margin-top: 40px;
+    }
+    h1 {
+      font-size: 32px;
     }
     select, button {
       font-size: 18px;
@@ -24,7 +28,7 @@
 <body>
 
 <h1>🌾 CropShield</h1>
-<p>Multilingual Voice Farming Assistant</p>
+<p>Multilingual Voice Farming Assistant (Desktop Demo)</p>
 
 <select id="languageSelect">
   <option value="en">English</option>
@@ -39,62 +43,167 @@
 <div id="result"></div>
 
 <script>
+/* ================= SPEECH SETUP ================= */
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
 
 const recognition = new SpeechRecognition();
+
+/* Always listen in English for desktop reliability */
 recognition.lang = "en-IN";
+recognition.continuous = false;
+recognition.interimResults = false;
 
 function startListening() {
   recognition.start();
 }
 
 recognition.onresult = function (event) {
-  const input = event.results[0][0].transcript.toLowerCase();
-  document.getElementById("text").innerText = "You said: " + input;
-  processLogic(input);
+  const spokenText = event.results[0][0].transcript.toLowerCase();
+  document.getElementById("text").innerText =
+    "You said: " + spokenText;
+  processLogic(spokenText);
 };
 
+recognition.onerror = function () {
+  document.getElementById("result").innerText =
+    "Speech not detected. Please speak clearly.";
+};
+
+/* ================= MAIN LOGIC ================= */
 function processLogic(input) {
   const lang = document.getElementById("languageSelect").value;
   let reply = "";
 
-  if (lang === "hi") {
-    if (input.includes("baarish") || input.includes("barish")) {
-      reply = "बारिश की संभावना है। आज स्प्रे न करें।";
-    } else if (input.includes("keede") || input.includes("keet")) {
-      reply = "फसल में कीट समस्या है। नीम तेल का प्रयोग करें।";
-    } else {
-      reply = "कृपया मौसम या फसल के बारे में पूछें।";
-    }
-    speak(reply, "hi-IN");
-  }
-
+  /* ============ ENGLISH ============ */
   if (lang === "en") {
+
     if (input.includes("rain")) {
       reply = "Rain is expected. Avoid spraying today.";
-    } else if (input.includes("pest")) {
-      reply = "Common pests detected. Use neem oil.";
-    } else {
-      reply = "Please ask about crops or weather.";
     }
+    else if (input.includes("spray")) {
+      reply = "Weather is suitable. You can spray today.";
+    }
+    else if (input.includes("kharif")) {
+      reply = "Kharif crops include rice, cotton, maize and groundnut.";
+    }
+    else if (input.includes("rabi")) {
+      reply = "Rabi crops include wheat, mustard, barley and gram.";
+    }
+    else if (input.includes("fertilizer") || input.includes("urea")) {
+      reply = "Use balanced fertilizer like urea, DAP or NPK.";
+    }
+    else if (input.includes("pest") || input.includes("disease")) {
+      reply = "Common pests include stem borer and aphids.";
+    }
+    else {
+      reply = "Ask about crops, fertiliser, pests, rain or spraying.";
+    }
+
     speak(reply, "en-IN");
   }
 
-  if (lang === "te") {
-    if (input.includes("varsham")) {
-      reply = "వర్షం వచ్చే అవకాశం ఉంది. స్ప్రే చేయవద్దు.";
-    } else if (input.includes("purugu")) {
-      reply = "పురుగు సమస్య ఉంది. నిమ్ ఆయిల్ వాడండి.";
-    } else {
-      reply = "దయచేసి పంటల గురించి అడగండి.";
+  /* ============ HINDI (HINGLISH INPUT – FIXED) ============ */
+  if (lang === "hi") {
+
+    // 🌧️ Rain
+    if (
+      input.includes("barish") ||
+      input.includes("baarish") ||
+      input.includes("rain")
+    ) {
+      reply = "बारिश की संभावना है। आज स्प्रे न करें।";
     }
+
+    // 🚿 Spray
+    else if (
+      input.includes("spray") ||
+      input.includes("chhidkaav") ||
+      input.includes("chhidkav")
+    ) {
+      reply = "मौसम अनुकूल है। आप स्प्रे कर सकते हैं।";
+    }
+
+    // 🌱 Kharif
+    else if (input.includes("kharif")) {
+      reply = "खरीफ फसलें धान, कपास और मक्का हैं।";
+    }
+
+    // 🌱 Rabi
+    else if (input.includes("rabi")) {
+      reply = "रबी फसलें गेहूं, चना और सरसों हैं।";
+    }
+
+    // 🧪 Fertiliser
+    else if (
+      input.includes("fertilizer") ||
+      input.includes("khaad") ||
+      input.includes("khad") ||
+      input.includes("urea") ||
+      input.includes("dap")
+    ) {
+      reply = "धान और अन्य फसलों के लिए यूरिया और डीएपी का संतुलित प्रयोग करें।";
+    }
+
+    // 🐛 Pest / Disease
+    else if (
+      input.includes("keet") ||
+      input.includes("keetanu") ||
+      input.includes("rog") ||
+      input.includes("pest") ||
+      input.includes("disease")
+    ) {
+      reply = "तना छेदक और माहू सामान्य कीट हैं। नीम तेल का प्रयोग करें।";
+    }
+
+    else {
+      reply = "कृपया मौसम, फसल, खाद या रोग के बारे में पूछें।";
+    }
+
+    speak(reply, "hi-IN");
+  }
+
+  /* ============ TELUGU (ROMANIZED INPUT) ============ */
+  if (lang === "te") {
+
+    if (input.includes("varsham") || input.includes("rain")) {
+      reply = "వర్షం వచ్చే అవకాశం ఉంది. ఈరోజు స్ప్రే చేయవద్దు.";
+    }
+    else if (input.includes("spray") || input.includes("cheyacha")) {
+      reply = "వాతావరణం అనుకూలంగా ఉంది. స్ప్రే చేయవచ్చు.";
+    }
+    else if (input.includes("kharif")) {
+      reply = "ఖరీఫ్ పంటలు వరి, పత్తి మరియు మొక్కజొన్న.";
+    }
+    else if (input.includes("rabi")) {
+      reply = "రబీ పంటలు గోధుమ మరియు శెనగలు.";
+    }
+    else if (
+      input.includes("eruvu") ||
+      input.includes("fertilizer") ||
+      input.includes("urea")
+    ) {
+      reply = "పంటకు అనుగుణంగా యూరియా లేదా ఎన్‌పీకే వాడాలి.";
+    }
+    else if (
+      input.includes("purugu") ||
+      input.includes("tegulu") ||
+      input.includes("pest") ||
+      input.includes("disease")
+    ) {
+      reply = "సాధారణ పురుగులు స్టెం బోరర్ మరియు ఆఫిడ్స్.";
+    }
+    else {
+      reply = "పంటలు లేదా వాతావరణం గురించి అడగండి.";
+    }
+
     speak(reply, "te-IN");
   }
 
   document.getElementById("result").innerText = reply;
 }
 
+/* ================= VOICE OUTPUT ================= */
 function speak(text, lang) {
   const msg = new SpeechSynthesisUtterance(text);
   msg.lang = lang;
@@ -104,3 +213,4 @@ function speak(text, lang) {
 
 </body>
 </html>
+
