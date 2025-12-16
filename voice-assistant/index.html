@@ -1,209 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CropShield – Voice Assistant</title>
+<meta charset="UTF-8">
+<title>CropShield – Multilingual Voice Assistant</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 40px;
-    }
-    h1 {
-      font-size: 32px;
-    }
-    select, button {
-      font-size: 18px;
-      padding: 10px 20px;
-      margin-top: 15px;
-    }
-    #text, #result {
-      margin-top: 20px;
-      font-size: 18px;
-    }
-  </style>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 40px;
+  }
+  h1 {
+    font-size: 34px;
+  }
+  select, button {
+    font-size: 18px;
+    padding: 10px 20px;
+    margin-top: 15px;
+  }
+  #heard, #answer {
+    margin-top: 20px;
+    font-size: 18px;
+  }
+</style>
 </head>
 
 <body>
 
 <h1>🌾 CropShield</h1>
-<p>Multilingual Voice Farming Assistant (Desktop Demo)</p>
+<p>Multilingual Voice Farming Assistant</p>
 
-<select id="languageSelect">
-  <option value="en">English</option>
-  <option value="hi">Hindi</option>
-  <option value="te">Telugu</option>
+<select id="lang">
+  <option value="en-IN">English</option>
+  <option value="hi-IN">Hindi</option>
+  <option value="te-IN">Telugu</option>
 </select>
 <br>
 
 <button onclick="startListening()">🎤 Speak</button>
 
-<div id="text"></div>
-<div id="result"></div>
+<div id="heard"></div>
+<div id="answer"></div>
 
 <script>
-/* ================= SPEECH SETUP ================= */
+/* ================= SPEECH RECOGNITION ================= */
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
 
 const recognition = new SpeechRecognition();
-
-/* Always listen in English for desktop reliability */
-recognition.lang = "en-IN";
 recognition.continuous = false;
 recognition.interimResults = false;
 
 function startListening() {
+  const selectedLang = document.getElementById("lang").value;
+  recognition.lang = selectedLang;
   recognition.start();
 }
 
 recognition.onresult = function (event) {
-  const spokenText = event.results[0][0].transcript.toLowerCase();
-  document.getElementById("text").innerText =
-    "You said: " + spokenText;
-  processLogic(spokenText);
+  const text = event.results[0][0].transcript.toLowerCase();
+  document.getElementById("heard").innerText = "You said: " + text;
+  handleQuery(text);
 };
 
 recognition.onerror = function () {
-  document.getElementById("result").innerText =
-    "Speech not detected. Please speak clearly.";
+  document.getElementById("answer").innerText =
+    "Could not detect speech. Please try again.";
 };
 
 /* ================= MAIN LOGIC ================= */
-function processLogic(input) {
-  const lang = document.getElementById("languageSelect").value;
+function handleQuery(input) {
+  const lang = document.getElementById("lang").value;
   let reply = "";
 
-  /* ============ ENGLISH ============ */
-  if (lang === "en") {
-
+  /* ---------- ENGLISH ---------- */
+  if (lang === "en-IN") {
     if (input.includes("rain")) {
       reply = "Rain is expected. Avoid spraying today.";
-    }
-    else if (input.includes("spray")) {
+    } else if (input.includes("spray")) {
       reply = "Weather is suitable. You can spray today.";
-    }
-    else if (input.includes("kharif")) {
+    } else if (input.includes("kharif")) {
       reply = "Kharif crops include rice, cotton, maize and groundnut.";
+    } else if (input.includes("rabi")) {
+      reply = "Rabi crops include wheat, mustard and gram.";
+    } else if (input.includes("fertilizer") || input.includes("urea") || input.includes("dap")) {
+      reply = "Use balanced fertilisers like urea, DAP and NPK.";
+    } else if (input.includes("pest") || input.includes("disease")) {
+      reply = "Common pests include stem borer, aphids and bollworm.";
+    } else if (input.includes("season")) {
+      reply = "India mainly has Kharif, Rabi and Zaid seasons.";
+    } else {
+      reply = "You can ask about crops, fertiliser, pests, rain or spraying.";
     }
-    else if (input.includes("rabi")) {
-      reply = "Rabi crops include wheat, mustard, barley and gram.";
-    }
-    else if (input.includes("fertilizer") || input.includes("urea")) {
-      reply = "Use balanced fertilizer like urea, DAP or NPK.";
-    }
-    else if (input.includes("pest") || input.includes("disease")) {
-      reply = "Common pests include stem borer and aphids.";
-    }
-    else {
-      reply = "Ask about crops, fertiliser, pests, rain or spraying.";
-    }
-
-    speak(reply, "en-IN");
   }
 
-  /* ============ HINDI (HINGLISH INPUT – FIXED) ============ */
-  if (lang === "hi") {
-
-    // 🌧️ Rain
-    if (
-      input.includes("barish") ||
-      input.includes("baarish") ||
-      input.includes("rain")
-    ) {
+  /* ---------- HINDI (ROMAN INPUT) ---------- */
+  if (lang === "hi-IN") {
+    if (input.includes("baarish") || input.includes("barish")) {
       reply = "बारिश की संभावना है। आज स्प्रे न करें।";
-    }
-
-    // 🚿 Spray
-    else if (
-      input.includes("spray") ||
-      input.includes("chhidkaav") ||
-      input.includes("chhidkav")
-    ) {
+    } else if (input.includes("spray") || input.includes("chhidkaav")) {
       reply = "मौसम अनुकूल है। आप स्प्रे कर सकते हैं।";
-    }
-
-    // 🌱 Kharif
-    else if (input.includes("kharif")) {
+    } else if (input.includes("kharif")) {
       reply = "खरीफ फसलें धान, कपास और मक्का हैं।";
-    }
-
-    // 🌱 Rabi
-    else if (input.includes("rabi")) {
+    } else if (input.includes("rabi")) {
       reply = "रबी फसलें गेहूं, चना और सरसों हैं।";
+    } else if (input.includes("khaad") || input.includes("urea") || input.includes("dap")) {
+      reply = "यूरिया और डीएपी का संतुलित प्रयोग करें।";
+    } else if (input.includes("keet") || input.includes("rog")) {
+      reply = "तना छेदक और माहू सामान्य कीट हैं।";
+    } else if (input.includes("mausam") || input.includes("season")) {
+      reply = "भारत में खरीफ, रबी और ज़ायद मौसम होते हैं।";
+    } else {
+      reply = "कृपया फसल, खाद, कीट या मौसम के बारे में पूछें।";
     }
-
-    // 🧪 Fertiliser
-    else if (
-      input.includes("fertilizer") ||
-      input.includes("khaad") ||
-      input.includes("khad") ||
-      input.includes("urea") ||
-      input.includes("dap")
-    ) {
-      reply = "धान और अन्य फसलों के लिए यूरिया और डीएपी का संतुलित प्रयोग करें।";
-    }
-
-    // 🐛 Pest / Disease
-    else if (
-      input.includes("keet") ||
-      input.includes("keetanu") ||
-      input.includes("rog") ||
-      input.includes("pest") ||
-      input.includes("disease")
-    ) {
-      reply = "तना छेदक और माहू सामान्य कीट हैं। नीम तेल का प्रयोग करें।";
-    }
-
-    else {
-      reply = "कृपया मौसम, फसल, खाद या रोग के बारे में पूछें।";
-    }
-
-    speak(reply, "hi-IN");
   }
 
-  /* ============ TELUGU (ROMANIZED INPUT) ============ */
-  if (lang === "te") {
-
-    if (input.includes("varsham") || input.includes("rain")) {
-      reply = "వర్షం వచ్చే అవకాశం ఉంది. ఈరోజు స్ప్రే చేయవద్దు.";
-    }
-    else if (input.includes("spray") || input.includes("cheyacha")) {
+  /* ---------- TELUGU (ROMAN INPUT) ---------- */
+  if (lang === "te-IN") {
+    if (input.includes("varsham")) {
+      reply = "వర్షం వచ్చే అవకాశం ఉంది. స్ప్రే చేయవద్దు.";
+    } else if (input.includes("spray")) {
       reply = "వాతావరణం అనుకూలంగా ఉంది. స్ప్రే చేయవచ్చు.";
-    }
-    else if (input.includes("kharif")) {
+    } else if (input.includes("kharif")) {
       reply = "ఖరీఫ్ పంటలు వరి, పత్తి మరియు మొక్కజొన్న.";
-    }
-    else if (input.includes("rabi")) {
+    } else if (input.includes("rabi")) {
       reply = "రబీ పంటలు గోధుమ మరియు శెనగలు.";
-    }
-    else if (
-      input.includes("eruvu") ||
-      input.includes("fertilizer") ||
-      input.includes("urea")
-    ) {
-      reply = "పంటకు అనుగుణంగా యూరియా లేదా ఎన్‌పీకే వాడాలి.";
-    }
-    else if (
-      input.includes("purugu") ||
-      input.includes("tegulu") ||
-      input.includes("pest") ||
-      input.includes("disease")
-    ) {
-      reply = "సాధారణ పురుగులు స్టెం బోరర్ మరియు ఆఫిడ్స్.";
-    }
-    else {
+    } else if (input.includes("eruvu") || input.includes("urea")) {
+      reply = "యూరియా లేదా ఎన్‌పీకే ఎరువులు వాడాలి.";
+    } else if (input.includes("purugu") || input.includes("tegulu")) {
+      reply = "స్టెం బోరర్ మరియు ఆఫిడ్స్ సాధారణ పురుగులు.";
+    } else if (input.includes("season")) {
+      reply = "ఖరీఫ్, రబీ మరియు జాయిద్ పంట కాలాలు ఉన్నాయి.";
+    } else {
       reply = "పంటలు లేదా వాతావరణం గురించి అడగండి.";
     }
-
-    speak(reply, "te-IN");
   }
 
-  document.getElementById("result").innerText = reply;
+  document.getElementById("answer").innerText = reply;
+  speak(reply, lang);
 }
 
-/* ================= VOICE OUTPUT ================= */
+/* ================= SPEECH OUTPUT ================= */
 function speak(text, lang) {
   const msg = new SpeechSynthesisUtterance(text);
   msg.lang = lang;
@@ -213,4 +150,5 @@ function speak(text, lang) {
 
 </body>
 </html>
+
 
