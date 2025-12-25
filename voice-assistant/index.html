@@ -2,26 +2,27 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CropShield – Voice Assistant</title>
+<title>🌾 CropShield</title>
 
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin-top: 40px;
-  }
-  h1 {
-    font-size: 40px;
-  }
-  select, button {
-    font-size: 18px;
-    padding: 10px 20px;
-    margin-top: 15px;
-  }
-  #text, #result {
-    margin-top: 20px;
-    font-size: 18px;
-  }
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  text-align: center;
+  margin-top: 40px;
+}
+h1 { font-size: 40px; }
+select, button {
+  font-size: 18px;
+  padding: 10px 16px;
+  margin-top: 12px;
+  width: 300px;
+}
+#result {
+  margin-top: 25px;
+  font-size: 18px;
+  font-weight: bold;
+}
 </style>
 </head>
 
@@ -30,7 +31,7 @@
 <h1>🌾 CropShield</h1>
 <p>Smart Multilingual Farming Assistant</p>
 
-<select id="languageSelect">
+<select id="lang">
   <option value="en">English</option>
   <option value="hi">Hindi</option>
   <option value="te">Telugu</option>
@@ -39,16 +40,13 @@
 
 <button onclick="startListening()">🎤 Speak</button>
 
-<div id="text"></div>
 <div id="result"></div>
 
 <script>
-const SpeechRecognition =
-  window.SpeechRecognition || window.webkitSpeechRecognition;
-
-const recognition = new SpeechRecognition();
+/* ---------- SPEECH (FORCED ENGLISH INPUT) ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new SR();
 recognition.lang = "en-IN";
-recognition.continuous = false;
 recognition.interimResults = false;
 
 function startListening() {
@@ -56,149 +54,141 @@ function startListening() {
 }
 
 recognition.onresult = function (event) {
-  const spokenText = event.results[0][0].transcript.toLowerCase();
-  document.getElementById("text").innerText = "You said: " + spokenText;
-  processLogic(spokenText);
+  const input = normalize(event.results[0][0].transcript);
+  respond(input);
 };
 
-recognition.onerror = function () {
-  document.getElementById("result").innerText =
-    "Speech not detected. Please speak clearly.";
-};
+function normalize(t){
+  return t.toLowerCase().replace(/[.,!?]/g,"");
+}
 
-function processLogic(input) {
-  const lang = document.getElementById("languageSelect").value;
+function hasAny(input, words){
+  return words.some(w => input.includes(w));
+}
+
+/* ---------- CORE LOGIC ---------- */
+function respond(input){
+  const lang = document.getElementById("lang").value;
   let reply = "";
 
-  /* ================= ENGLISH ================= */
-  if (lang === "en") {
+  /* CROPS */
+  const rice   = hasAny(input, ["rice","paddy","dhan","dhaan","vari"]);
+  const wheat  = hasAny(input, ["wheat","gehun","godhuma"]);
+  const cotton = hasAny(input, ["cotton","kapas","patti"]);
 
-    // 1️⃣ FERTILISER
-    if (input.includes("fertilizer") || input.includes("fertiliser") || input.includes("urea") || input.includes("dap")) {
-      if (input.includes("rice")) {
-        reply = "For rice in kharif season, use urea for nitrogen and DAP or NPK as basal fertiliser.";
-      } else if (input.includes("wheat")) {
-        reply = "For wheat, apply DAP at sowing and urea in split doses.";
-      } else {
-        reply = "Use balanced fertiliser like urea, DAP or NPK based on soil condition.";
-      }
-    }
+  /* INTENTS */
+  const fertilizer = hasAny(input, ["fertilizer","fertiliser","urea","dap","npk","khaad","khad","eruvu"]);
+  const pest = hasAny(input, ["pest","keet","purugu","insect","rog","tegulu"]);
+  const water = hasAny(input, ["water","irrigation","paani","neeru"]);
+  const growth = hasAny(input, ["poor","low","kam","takkuva","growth","yield","paidavar"]);
+  const rain = hasAny(input, ["rain","barish","varsham","spray"]);
+  const punjab = hasAny(input, ["punjab"]);
+  const mh = hasAny(input, ["maharashtra"]);
+  const ts = hasAny(input, ["telangana"]);
 
-    // 2️⃣ PEST / DISEASE
-    else if (input.includes("pest") || input.includes("disease")) {
-      reply = "Common pests include stem borer and aphids. Use neem oil or recommended pesticide.";
-    }
-
-    // 3️⃣ SPRAY / RAIN
-    else if (input.includes("spray")) {
-      reply = "Spraying is safe only when there is no rain and low wind.";
-    }
-    else if (input.includes("rain")) {
-      reply = "Rain is expected. Avoid spraying today.";
-    }
-
-    // 4️⃣ CROP + SEASON
-    else if (input.includes("rice") && input.includes("kharif")) {
-      reply = "Rice is a major kharif crop and grows well with adequate rainfall.";
-    }
-    else if (input.includes("rabi")) {
-      reply = "Rabi crops include wheat, mustard and gram.";
-    }
-
-    else {
-      reply = "Ask about crops, fertiliser, pests, rain or spraying.";
-    }
-
-    speak(reply, "en-IN");
+  /* ---------- STATE ---------- */
+  if (punjab || mh || ts) {
+    if (punjab)
+      reply = lang==="hi" ? "पंजाब में गेहूं और धान मुख्य फसलें हैं।"
+            : lang==="te" ? "పంజాబ్‌లో గోధుమ మరియు వరి పంటలు."
+            : "Punjab mainly grows wheat and rice.";
+    else if (mh)
+      reply = lang==="hi" ? "महाराष्ट्र में कपास और गन्ना उगाया जाता है।"
+            : lang==="te" ? "మహారాష్ట్రలో పత్తి మరియు చెరకు పంటలు."
+            : "Maharashtra grows cotton and sugarcane.";
+    else
+      reply = lang==="hi" ? "तेलंगाना में धान और कपास प्रमुख फसलें हैं।"
+            : lang==="te" ? "తెలంగాణలో వరి మరియు పత్తి పంటలు."
+            : "Telangana mainly grows rice and cotton.";
   }
 
-  /* ================= HINDI ================= */
-  if (lang === "hi") {
-
-    // 1️⃣ खाद
-    if (input.includes("khaad") || input.includes("khad") || input.includes("fertilizer") || input.includes("urea") || input.includes("dap")) {
-      if (input.includes("rice") || input.includes("धान")) {
-        reply = "धान की फसल के लिए यूरिया और डीएपी का संतुलित प्रयोग करें।";
-      } else {
-        reply = "फसल के अनुसार यूरिया, डीएपी या एनपीके का प्रयोग करें।";
-      }
-    }
-
-    // 2️⃣ कीट / रोग
-    else if (input.includes("keet") || input.includes("rog") || input.includes("pest")) {
-      reply = "तना छेदक और माहू सामान्य कीट हैं। नीम तेल उपयोग करें।";
-    }
-
-    // 3️⃣ स्प्रे / बारिश
-    else if (input.includes("spray")) {
-      reply = "बारिश न हो तो ही स्प्रे करें।";
-    }
-    else if (input.includes("barish") || input.includes("baarish")) {
-      reply = "बारिश की संभावना है। आज स्प्रे न करें।";
-    }
-
-    // 4️⃣ फसल जानकारी
-    else if (input.includes("kharif")) {
-      reply = "खरीफ फसलें धान, कपास और मक्का हैं।";
-    }
-    else if (input.includes("rabi")) {
-      reply = "रबी फसलें गेहूं, चना और सरसों हैं।";
-    }
-
-    else {
-      reply = "कृपया खाद, फसल, कीट या मौसम के बारे में पूछें।";
-    }
-
-    speak(reply, "hi-IN");
+  /* ---------- FERTILISER (FIXED & STRICT) ---------- */
+  else if (fertilizer && rice) {
+    reply = lang==="hi"
+      ? "धान के लिए डीएपी बुवाई में और यूरिया दो किस्तों में दें।"
+      : lang==="te"
+      ? "వరి పంటకు డీఏపీ బేసల్‌గా, యూరియాను రెండు విడతలుగా వేయాలి."
+      : "For rice, apply DAP at sowing and urea in two split doses.";
   }
 
-  /* ================= TELUGU ================= */
-  if (lang === "te") {
+  else if (fertilizer && wheat) {
+    reply = lang==="hi"
+      ? "गेहूं के लिए बुवाई में डीएपी और बाद में यूरिया दें।"
+      : lang==="te"
+      ? "గోధుమ పంటకు డీఏపీ బేసల్‌గా, యూరియా పైవేళ వేయాలి."
+      : "For wheat, apply DAP at sowing and urea as top dressing.";
+  }
 
-    // 1️⃣ ఎరువు
-    if (input.includes("eruvu") || input.includes("fertilizer") || input.includes("urea")) {
-      if (input.includes("rice") || input.includes("vari")) {
-        reply = "వరి పంటకు యూరియా మరియు ఎన్‌పీకే ఉపయోగించాలి.";
-      } else {
-        reply = "పంటకు అనుగుణంగా సరైన ఎరువు వాడాలి.";
-      }
-    }
+  else if (fertilizer && cotton) {
+    reply = lang==="hi"
+      ? "कपास के लिए यूरिया और पोटाश संतुलित मात्रा में दें।"
+      : lang==="te"
+      ? "పత్తి పంటకు యూరియా మరియు పొటాష్ సరైన మోతాదులో వాడాలి."
+      : "For cotton, apply urea and potash in balanced quantity.";
+  }
 
-    // 2️⃣ పురుగు / తెగులు
-    else if (input.includes("purugu") || input.includes("tegulu") || input.includes("pest")) {
-      reply = "సాధారణ పురుగులు స్టెం బోరర్ మరియు ఆఫిడ్స్.";
-    }
+  else if (fertilizer) {
+    reply = lang==="hi"
+      ? "कृपया फसल का नाम बताएं।"
+      : lang==="te"
+      ? "దయచేసి పంట పేరు చెప్పండి."
+      : "Please mention the crop name.";
+  }
 
-    // 3️⃣ స్ప్రే / వర్షం
-    else if (input.includes("spray")) {
-      reply = "వర్షం లేనప్పుడు మాత్రమే స్ప్రే చేయాలి.";
-    }
-    else if (input.includes("varsham")) {
-      reply = "వర్షం వచ్చే అవకాశం ఉంది. ఈరోజు స్ప్రే చేయవద్దు.";
-    }
+  /* ---------- PEST ---------- */
+  else if (pest) {
+    reply = lang==="hi"
+      ? "नीम तेल या अनुशंसित कीटनाशक का प्रयोग करें।"
+      : lang==="te"
+      ? "పురుగుల నియంత్రణకు నేమ్ ఆయిల్ వాడండి."
+      : "Use neem oil or recommended pesticide.";
+  }
 
-    // 4️⃣ పంట సమాచారం
-    else if (input.includes("kharif")) {
-      reply = "ఖరీఫ్ పంటలు వరి, పత్తి మరియు మొక్కజొన్న.";
-    }
-    else if (input.includes("rabi")) {
-      reply = "రబీ పంటలు గోధుమ మరియు శెనగలు.";
-    }
+  /* ---------- WATER ---------- */
+  else if (water) {
+    reply = lang==="hi"
+      ? "फसल की अवस्था के अनुसार सिंचाई करें।"
+      : lang==="te"
+      ? "పంట దశను బట్టి నీరు ఇవ్వాలి."
+      : "Irrigate crops based on growth stage.";
+  }
 
-    else {
-      reply = "పంటలు, ఎరువు లేదా వాతావరణం గురించి అడగండి.";
-    }
+  /* ---------- GROWTH ---------- */
+  else if (growth) {
+    reply = lang==="hi"
+      ? "कम पैदावार पोषक तत्व या पानी की कमी से हो सकती है।"
+      : lang==="te"
+      ? "తక్కువ దిగుబడి పోషక లోపం వల్ల కావచ్చు."
+      : "Low yield may be due to nutrient or water deficiency.";
+  }
 
-    speak(reply, "te-IN");
+  /* ---------- WEATHER ---------- */
+  else if (rain) {
+    reply = lang==="hi"
+      ? "बारिश में स्प्रे न करें।"
+      : lang==="te"
+      ? "వర్షంలో స్ప్రే చేయవద్దు."
+      : "Avoid spraying during rain.";
+  }
+
+  /* ---------- FALLBACK ---------- */
+  else {
+    reply = lang==="hi"
+      ? "कृपया खेती से जुड़ा प्रश्न पूछें।"
+      : lang==="te"
+      ? "వ్యవసాయానికి సంబంధించిన ప్రశ్న అడగండి."
+      : "Please ask a farming related question.";
   }
 
   document.getElementById("result").innerText = reply;
+  speak(reply, lang);
 }
 
-function speak(text, lang) {
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = lang;
-  window.speechSynthesis.speak(msg);
+/* ---------- VOICE OUTPUT ---------- */
+function speak(text, lang){
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang==="hi" ? "hi-IN" : lang==="te" ? "te-IN" : "en-IN";
+  speechSynthesis.speak(u);
 }
 </script>
 
